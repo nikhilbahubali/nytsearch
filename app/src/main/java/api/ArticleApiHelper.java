@@ -13,21 +13,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class ArticleApiHelper {
-    private static ArticleApiHelper INSTANCE;
     public static final String BASE_URL = "https://api.nytimes.com/";
     private ArticleService mArticleService;
     private Retrofit mRetrofit;
     private String mQuery;
 
-    public static synchronized ArticleApiHelper getinstance(String query) {
-        if (INSTANCE == null) {
-            INSTANCE = new ArticleApiHelper(query);
-        }
-
-        return INSTANCE;
-    }
-
-    private ArticleApiHelper(String query) {
+    public ArticleApiHelper(String query) {
         mQuery = query;
 
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();

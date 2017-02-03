@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         mArticles = new ArrayList<>();
         mArticleRecyclerViewAdapter = new ArticleRecyclerViewAdapter(this, mArticles);
         rvArticles.setAdapter(mArticleRecyclerViewAdapter);
-        //rvArticles.setLayoutManager(new LinearLayoutManager(this));
         rvArticles.setLayoutManager(new StaggeredGridLayoutManager(3, 1));
     }
 
@@ -62,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                Call<ArticleResponse> articlesRequest = ArticleApiHelper.getinstance(query).getArticleService().getArticles();
+                Call<ArticleResponse> articlesRequest = new ArticleApiHelper(query).getArticleService().getArticles();
                 articlesRequest.enqueue(new Callback<ArticleResponse>() {
                     @Override
                     public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
