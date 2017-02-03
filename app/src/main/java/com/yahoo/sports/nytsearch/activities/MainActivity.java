@@ -3,7 +3,9 @@ package com.yahoo.sports.nytsearch.activities;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -12,24 +14,40 @@ import android.view.MenuItem;
 
 import com.yahoo.sports.nytsearch.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import adapters.ArticleRecyclerViewAdapter;
 import api.ArticleApiHelper;
 import api.ArticleResponse;
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import models.Article;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
+    @BindView(R.id.rvArticleItems)
+    RecyclerView rvArticles;
+
+    private ArticleRecyclerViewAdapter mArticleRecyclerViewAdapter;
+    private ArrayList<Article> mArticles;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        // set toolbar as the action bar
+        ButterKnife.bind(this);
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mArticles = new ArrayList<>();
+        mArticleRecyclerViewAdapter = new ArticleRecyclerViewAdapter(this, mArticles);
+        rvArticles.setAdapter(mArticleRecyclerViewAdapter);
+        //rvArticles.setLayoutManager(new LinearLayoutManager(this));
+        rvArticles.setLayoutManager(new StaggeredGridLayoutManager(3, 1));
     }
 
     @Override
@@ -49,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
                         List<Article> articles = response.body().getArticles();
+                        populateRecyclerView(articles);
                     }
 
                     @Override
@@ -71,5 +90,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private void populateRecyclerView(List<Article> articles) {
+        runOnUiThread(() -> {
+            mArticles.clear();
+            mArticles.addAll(articles);
+            mArticleRecyclerViewAdapter.notifyDataSetChanged();
+        });
     }
 }
