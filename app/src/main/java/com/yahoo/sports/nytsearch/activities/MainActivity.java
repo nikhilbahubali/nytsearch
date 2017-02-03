@@ -1,5 +1,6 @@
 package com.yahoo.sports.nytsearch.activities;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -20,6 +21,7 @@ import java.util.List;
 import adapters.ArticleRecyclerViewAdapter;
 import api.ArticleApiHelper;
 import api.ArticleResponse;
+import api.NetworkHelper;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import models.Article;
@@ -43,10 +45,27 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        CheckConnectivty();
+
+        // set up recycler view
         mArticles = new ArrayList<>();
         mArticleRecyclerViewAdapter = new ArticleRecyclerViewAdapter(this, mArticles);
         rvArticles.setAdapter(mArticleRecyclerViewAdapter);
         rvArticles.setLayoutManager(new StaggeredGridLayoutManager(3, 1));
+    }
+
+    private boolean CheckConnectivty() {
+        if (!NetworkHelper.isOnline(this)) {
+            AlertDialog alertDialog = new AlertDialog.Builder(this)
+                    .setMessage(R.string.OfflineMessage)
+                    .setPositiveButton(R.string.OkText, (dialog, which) -> {
+                    })
+                    .create();
+            alertDialog.show();
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -61,27 +80,29 @@ public class MainActivity extends AppCompatActivity {
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
-                Call<ArticleResponse> articlesRequest = new ArticleApiHelper(query).getArticleService().getArticles();
-                articlesRequest.enqueue(new Callback<ArticleResponse>() {
-                    @Override
-                    public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
-                        List<Article> articles = response.body().getArticles();
-                        populateRecyclerView(articles);
-                    }
+                if (CheckConnectivty()) {
+                    Call<ArticleResponse> articlesRequest = new ArticleApiHelper(query).getArticleService().getArticles();
+                    articlesRequest.enqueue(new Callback<ArticleResponse>() {
+                        @Override
+                        public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
+                            List<Article> articles = response.body().getArticles();
+                            populateRecyclerView(articles);
+                        }
 
-                    @Override
-                    public void onFailure(Call<ArticleResponse> call, Throwable t) {
-                        Log.d("Failed", t.getMessage());
-                    }
-                });
+                        @Override
+                        public void onFailure(Call<ArticleResponse> call, Throwable t) {
+                            Log.d("Failed", t.getMessage());
+                        }
+                    });
 
-                // workaround to avoid issues with some emulators and keyboard devices firing twice if a keyboard enter is used
-                // see https://code.google.com/p/android/issues/detail?id=24599
-                searchView.clearFocus();
+                    // workaround to avoid issues with some emulators and keyboard devices firing twice if a keyboard enter is used
+                    // see https://code.google.com/p/android/issues/detail?id=24599
+                    searchView.clearFocus();
 
-                return true;
+                    return true;
+                }
+                return false;
             }
-
             @Override
             public boolean onQueryTextChange(String newText) {
                 return false;
