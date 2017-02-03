@@ -11,6 +11,7 @@ public class Article implements Parcelable {
     private String mHeadline;
     private String mThumbnail;
     private String mWebUrl;
+    private static final String BASE_IMAGE_URL = "https://nytimes.com/";
 
     public String getHeadline() {
         return mHeadline;
@@ -18,6 +19,10 @@ public class Article implements Parcelable {
 
     public String getThumbnail() {
         return mThumbnail;
+    }
+
+    public String getThumbnailUrl() {
+        return BASE_IMAGE_URL + mThumbnail;
     }
 
     public String getWebUrl() {
