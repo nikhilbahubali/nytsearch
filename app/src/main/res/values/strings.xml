@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">News Article Search</string>
+    <string name="OfflineMessage">No internet connectivity!</string>
+    <string name="OkText">Ok</string>
 </resources>
