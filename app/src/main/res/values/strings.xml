@@ -2,4 +2,11 @@
     <string name="app_name">News Article Search</string>
     <string name="OfflineMessage">No internet connectivity!</string>
     <string name="OkText">Ok</string>
+    <string name="BeginDate">Begin Date</string>
+    <string name="SortOrder">Sort Order</string>
+    <string name="Arts">Arts</string>
+    <string name="Fashion">Fashion &amp; Style</string>
+    <string name="Sports">Sports</string>
+    <string name="NewsDeskValues">News Desk Values</string>
+    <string name="Save">Save</string>
 </resources>

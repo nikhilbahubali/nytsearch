@@ -2,6 +2,7 @@ package com.yahoo.sports.nytsearch.activities;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -25,12 +26,13 @@ import api.NetworkHelper;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import models.Article;
+import models.Settings;
 import presenters.EndlessRecyclerViewScrollListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SettingsDialog.SettingsDialogListener {
     @BindView(R.id.rvArticleItems)
     RecyclerView rvArticles;
 
@@ -59,29 +61,17 @@ public class MainActivity extends AppCompatActivity {
 
         // Retain an instance so that you can call `resetState()` for fresh searches
         // Triggered only when new data needs to be appended to the list
-// Add whatever code is needed to append new items to the bottom of the list
+        // Add whatever code is needed to append new items to the bottom of the list
         mScrollListener = new EndlessRecyclerViewScrollListener(layoutManager) {
             @Override
             public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
                 // Triggered only when new data needs to be appended to the list
                 // Add whatever code is needed to append new items to the bottom of the list
-                loadNextDataFromApi(page);
+                fetchNextArticleSet(mQueryTerm, page);
             }
         };
         // Adds the scroll listener to RecyclerView
         rvArticles.addOnScrollListener(mScrollListener);
-    }
-
-    // Append the next page of data into the adapter
-    // This method probably sends out a network request and appends new data items to your adapter.
-    public void loadNextDataFromApi(int offset) {
-        // Send an API request to retrieve appropriate paginated data
-        //  --> Send the request including an offset value (i.e `page`) as a query parameter.
-        //  --> Deserialize and construct new model objects from the API response
-        //  --> Append the new data objects to the existing set of items inside the array of items
-        //  --> Notify the adapter of the new items made with `notifyItemRangeInserted()`
-        fetchNextArticleSet(mQueryTerm, offset);
-        Log.d("Nikhil", "Page: " + offset);
     }
 
     private boolean CheckConnectivty() {
@@ -122,9 +112,24 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return false;
             }
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 return false;
+            }
+        });
+
+        MenuItem settings = menu.findItem(R.id.settings);
+        settings.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                SettingsDialog dialog = SettingsDialog.newInstance(getApplicationContext());
+                Bundle args = dialog.getArguments();
+                Settings settings = new Settings();
+                args.putSerializable("settings", settings);
+                dialog.setArguments(args);
+                dialog.show(getSupportFragmentManager(), "settingsdialog");
+                return true;
             }
         });
 
@@ -153,16 +158,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void populateRecyclerView(List<Article> articles, int page) {
         runOnUiThread(() -> {
-            if (page == 0) {
-                mArticles.clear();
-            }
-            mArticles.addAll(articles);
-            if (page == 0) {
-                mScrollListener.resetState();
-                mArticleRecyclerViewAdapter.notifyDataSetChanged();
-            } else {
-                mArticleRecyclerViewAdapter.notifyItemRangeInserted(page * 10, articles.size());
-            }
+            Handler handler = new Handler();
+            handler.postDelayed(() -> {
+                if (page == 0) {
+                    mArticles.clear();
+                }
+                mArticles.addAll(articles);
+                if (page == 0) {
+                    mScrollListener.resetState();
+                    mArticleRecyclerViewAdapter.notifyDataSetChanged();
+                } else {
+                    mArticleRecyclerViewAdapter.notifyItemRangeInserted(page * 10, articles.size());
+                }
+            }, 2000);
         });
+    }
+
+    @Override
+    public void OnFinishedSettingsEdit(Bundle args) {
+        Settings settings = (Settings) args.getSerializable("settings");
+        Log.d("Nikhil", settings.mBeginDate);
     }
 }
