@@ -17,9 +17,11 @@ public class ArticleApiHelper {
     private ArticleService mArticleService;
     private Retrofit mRetrofit;
     private String mQuery;
+    private int mPage;
 
-    public ArticleApiHelper(String query) {
+    public ArticleApiHelper(String query, int page) {
         mQuery = query;
+        mPage = page;
 
         OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
         httpClient.addInterceptor(chain -> {
@@ -29,6 +31,7 @@ public class ArticleApiHelper {
                     .addQueryParameter("api-key", "e5b624cc2a9d4af084913ffed1a8fa67")
                     .addQueryParameter("fl", "web_url,headline,multimedia")
                     .addQueryParameter("q", mQuery)
+                    .addQueryParameter("page", String.valueOf(mPage))
                     .build();
             request = request.newBuilder().url(url).build();
             Log.d("OKHttp", request.toString());

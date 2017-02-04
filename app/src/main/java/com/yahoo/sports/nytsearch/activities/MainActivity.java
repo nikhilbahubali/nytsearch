@@ -25,6 +25,7 @@ import api.NetworkHelper;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import models.Article;
+import presenters.EndlessRecyclerViewScrollListener;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
     private ArticleRecyclerViewAdapter mArticleRecyclerViewAdapter;
     private ArrayList<Article> mArticles;
+    private String mQueryTerm;
+    private EndlessRecyclerViewScrollListener mScrollListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +54,34 @@ public class MainActivity extends AppCompatActivity {
         mArticles = new ArrayList<>();
         mArticleRecyclerViewAdapter = new ArticleRecyclerViewAdapter(this, mArticles);
         rvArticles.setAdapter(mArticleRecyclerViewAdapter);
-        rvArticles.setLayoutManager(new StaggeredGridLayoutManager(3, 1));
+        StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(3, 1);
+        rvArticles.setLayoutManager(layoutManager);
+
+        // Retain an instance so that you can call `resetState()` for fresh searches
+        // Triggered only when new data needs to be appended to the list
+// Add whatever code is needed to append new items to the bottom of the list
+        mScrollListener = new EndlessRecyclerViewScrollListener(layoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                // Triggered only when new data needs to be appended to the list
+                // Add whatever code is needed to append new items to the bottom of the list
+                loadNextDataFromApi(page);
+            }
+        };
+        // Adds the scroll listener to RecyclerView
+        rvArticles.addOnScrollListener(mScrollListener);
+    }
+
+    // Append the next page of data into the adapter
+    // This method probably sends out a network request and appends new data items to your adapter.
+    public void loadNextDataFromApi(int offset) {
+        // Send an API request to retrieve appropriate paginated data
+        //  --> Send the request including an offset value (i.e `page`) as a query parameter.
+        //  --> Deserialize and construct new model objects from the API response
+        //  --> Append the new data objects to the existing set of items inside the array of items
+        //  --> Notify the adapter of the new items made with `notifyItemRangeInserted()`
+        fetchNextArticleSet(mQueryTerm, offset);
+        Log.d("Nikhil", "Page: " + offset);
     }
 
     private boolean CheckConnectivty() {
@@ -81,19 +111,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 if (CheckConnectivty()) {
-                    Call<ArticleResponse> articlesRequest = new ArticleApiHelper(query).getArticleService().getArticles();
-                    articlesRequest.enqueue(new Callback<ArticleResponse>() {
-                        @Override
-                        public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
-                            List<Article> articles = response.body().getArticles();
-                            populateRecyclerView(articles);
-                        }
-
-                        @Override
-                        public void onFailure(Call<ArticleResponse> call, Throwable t) {
-                            Log.d("Failed", t.getMessage());
-                        }
-                    });
+                    mQueryTerm = query;
+                    fetchNextArticleSet(query);
 
                     // workaround to avoid issues with some emulators and keyboard devices firing twice if a keyboard enter is used
                     // see https://code.google.com/p/android/issues/detail?id=24599
@@ -112,11 +131,38 @@ public class MainActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void populateRecyclerView(List<Article> articles) {
+    private void fetchNextArticleSet(String query) {
+        fetchNextArticleSet(query, 0);
+    }
+
+    private void fetchNextArticleSet(String query, int page) {
+        Call<ArticleResponse> articlesRequest = new ArticleApiHelper(query, page).getArticleService().getArticles();
+        articlesRequest.enqueue(new Callback<ArticleResponse>() {
+            @Override
+            public void onResponse(Call<ArticleResponse> call, Response<ArticleResponse> response) {
+                List<Article> articles = response.body().getArticles();
+                populateRecyclerView(articles, page);
+            }
+
+            @Override
+            public void onFailure(Call<ArticleResponse> call, Throwable t) {
+                Log.d("Failed", t.getMessage());
+            }
+        });
+    }
+
+    private void populateRecyclerView(List<Article> articles, int page) {
         runOnUiThread(() -> {
-            mArticles.clear();
+            if (page == 0) {
+                mArticles.clear();
+            }
             mArticles.addAll(articles);
-            mArticleRecyclerViewAdapter.notifyDataSetChanged();
+            if (page == 0) {
+                mScrollListener.resetState();
+                mArticleRecyclerViewAdapter.notifyDataSetChanged();
+            } else {
+                mArticleRecyclerViewAdapter.notifyItemRangeInserted(page * 10, articles.size());
+            }
         });
     }
 }
