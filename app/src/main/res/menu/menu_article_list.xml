@@ -10,4 +10,8 @@
         app:actionViewClass="android.support.v7.widget.SearchView"
         />
 
+    <item android:id="@+id/settings"
+        android:orderInCategory="10"
+        android:title="settings"
+        android:icon="@mipmap/settings"/>
 </menu>
